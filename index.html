@@ -1,0 +1,1138 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Adaptive Chat — ADHD & Dyslexia Friendly</title>
+    <meta name="description" content="Modern, accessible chatbot with ADHD & dyslexia-friendly features" />
+    <!-- Tailwind CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- OpenDyslexic Font for dyslexia support -->
+    <link href="https://fonts.googleapis.com/css2?family=OpenDyslexic:wght@400;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+      /* CSS Variables for customization */
+      :root {
+        --chat-scale: 1;
+        --line-spacing: 1.5;
+        --letter-spacing: 0;
+        --font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto;
+      }
+
+      /* Font families */
+      .font-dyslexic { font-family: 'OpenDyslexic', monospace; }
+      .font-hyperlegible { font-family: 'Atkinson Hyperlegible', sans-serif; }
+
+      /* Custom scrollbar */
+      ::-webkit-scrollbar { width: 8px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+      ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+      /* Chat container with spacing controls */
+      .chat-container {
+        font-size: calc(1rem * var(--chat-scale));
+        line-height: var(--line-spacing);
+        letter-spacing: calc(var(--letter-spacing) * 0.1em);
+        font-family: var(--font-family);
+      }
+
+      /* Message animations */
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      @keyframes slideUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      .message { animation: fadeIn 0.3s ease-out; }
+      .message-new { animation: slideUp 0.4s ease-out; }
+
+      /* Typing indicator */
+      .typing-dots {
+        display: flex;
+        gap: 4px;
+        padding: 8px 12px;
+      }
+      .typing-dots span {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #9ca3af;
+        animation: bounce 1.4s infinite;
+      }
+      .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+      .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+      @keyframes bounce {
+        0%, 60%, 100% { transform: translateY(0); }
+        30% { transform: translateY(-10px); }
+      }
+
+      /* Theme classes - Light Theme */
+      .theme-light { background-color: white; color: #111827; }
+      .theme-light header { background: linear-gradient(135deg, #2563eb, #9333ea); }
+      .theme-light #settingsPanel { background: linear-gradient(180deg, #f3f4f6, white); }
+      .theme-light main { background-color: white; color: #111827; }
+      .theme-light .message-bot { background-color: #f3f4f6; color: #111827; }
+      .theme-light .message-user { background-color: #3b82f6; color: white; }
+      .theme-light #chatForm { background-color: white; border-top: 1px solid #e5e7eb; }
+      .theme-light input[type="text"] { background-color: white; color: #111827; border-color: #d1d5db; }
+      .theme-light #timerPanel { background: linear-gradient(90deg, #fef2f2, #fef3c7); border-top: 1px solid #e5e7eb; }
+      .theme-light #sessionTimer { background-color: #eff6ff; border-bottom: 1px solid #bfdbfe; }
+
+      /* Theme classes - Calm Theme */
+      .theme-calm { background: linear-gradient(135deg, #eff6ff, #f3e8ff, #fce7f3); color: #111827; }
+      .theme-calm header { background: linear-gradient(135deg, #a855f7, #ec4899); }
+      .theme-calm #settingsPanel { background: linear-gradient(180deg, #f3e8ff, #eff6ff); }
+      .theme-calm main { background: linear-gradient(135deg, #eff6ff, #f3e8ff, #fce7f3); color: #111827; }
+      .theme-calm .message-bot { background-color: white; color: #111827; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+      .theme-calm .message-user { background-color: #c084fc; color: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+      .theme-calm #chatForm { background: linear-gradient(90deg, #eff6ff, #f3e8ff); border-top: 2px solid #d8b4fe; }
+      .theme-calm input[type="text"] { background-color: white; color: #111827; border-color: #d8b4fe; }
+      .theme-calm #timerPanel { background: linear-gradient(90deg, #fef3c7, #fce7f3); border-top: 2px solid #fbbf24; }
+      .theme-calm #sessionTimer { background: linear-gradient(90deg, #eff6ff, #f3e8ff); border-bottom: 2px solid #d8b4fe; }
+
+      /* Theme classes - Dark Theme */
+      .theme-dark { background-color: #111827; color: #f3f4f6; }
+      .theme-dark header { background: linear-gradient(135deg, #1f2937, #0f172a); }
+      .theme-dark #settingsPanel { background-color: #1f2937; color: #f3f4f6; }
+      .theme-dark main { background-color: #111827; color: #f3f4f6; }
+      .theme-dark .message-bot { background-color: #374151; color: #f3f4f6; }
+      .theme-dark .message-user { background-color: #1e40af; color: white; }
+      .theme-dark #chatForm { background-color: #1f2937; border-top: 1px solid #374151; }
+      .theme-dark input[type="text"] { background-color: #374151; color: #f3f4f6; border-color: #4b5563; }
+      .theme-dark #timerPanel { background-color: #1f2937; border-top: 1px solid #374151; }
+      .theme-dark #sessionTimer { background-color: #1f2937; border-bottom: 1px solid #374151; }
+
+      /* Theme classes - High Contrast */
+      .theme-high-contrast { background-color: black; color: white; }
+      .theme-high-contrast header { background-color: black; border-bottom: 2px solid white; }
+      .theme-high-contrast #settingsPanel { background-color: #1a1a1a; color: white; border-right: 2px solid white; }
+      .theme-high-contrast main { background-color: black; color: white; }
+      .theme-high-contrast .message-bot { background-color: #2a2a2a; color: white; border: 2px solid white; }
+      .theme-high-contrast .message-user { background-color: white; color: black; border: 2px solid white; }
+      .theme-high-contrast #chatForm { background-color: black; border-top: 2px solid white; }
+      .theme-high-contrast input[type="text"] { background-color: #1a1a1a; color: white; border: 2px solid white; }
+      .theme-high-contrast #timerPanel { background-color: #1a1a1a; border-top: 2px solid white; color: white; }
+      .theme-high-contrast #sessionTimer { background-color: #1a1a1a; border-bottom: 2px solid white; color: white; }
+
+      /* Focus mode - hide distractions */
+      .focus-mode #settingsPanel, 
+      .focus-mode #timerPanel, 
+      .focus-mode .chat-header-extra {
+        display: none;
+      }
+
+      /* Pomodoro timer styles */
+      .timer-circle {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        font-weight: bold;
+      }
+
+      /* Session focus timer */
+      .progress-bar {
+        height: 4px;
+        background: #e5e7eb;
+        border-radius: 2px;
+        overflow: hidden;
+      }
+      .progress-bar-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+        transition: width 0.3s ease;
+      }
+
+      /* Accessibility: Focus visible styles */
+      button:focus-visible, input:focus-visible, select:focus-visible {
+        outline: 3px solid #3b82f6;
+        outline-offset: 2px;
+      }
+
+      /* Large clickable buttons */
+      .btn-large {
+        padding: 12px 20px;
+        font-size: 1rem;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        min-height: 44px;
+      }
+      .btn-large:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+      .btn-large:active { transform: translateY(0); }
+
+      /* Avatar styles */
+      .avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 1.2rem;
+      }
+      .avatar-bot { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+      .avatar-user { background: #3b82f6; color: white; }
+
+      /* Distraction-free mode adjustments */
+      .distraction-free .sidebar-settings {
+        width: 0;
+        overflow: hidden;
+        opacity: 0;
+        transition: all 0.3s;
+      }
+
+      /* Smooth transitions */
+      * { transition-property: background-color, border-color, color; transition-duration: 0.2s; }
+    </style>
+  </head>
+  <body class="theme-light chat-container transition-colors duration-200">
+    <div class="flex h-screen flex-col md:flex-row">
+      
+      <!-- Settings Sidebar -->
+      <aside id="settingsPanel" class="sidebar-settings w-full md:w-80 bg-gradient-to-b from-gray-50 to-white border-b md:border-r border-gray-200 overflow-y-auto transition-all duration-300 md:flex md:flex-col">
+        <div class="sticky top-0 bg-white md:bg-gradient-to-b md:from-white md:to-gray-50 z-10 border-b border-gray-200 p-4">
+          <h2 class="text-lg font-bold text-gray-900 mb-2">Settings</h2>
+          <button id="closeSidebarBtn" class="md:hidden btn-large bg-gray-300 text-gray-900 w-full">Close</button>
+        </div>
+
+        <div class="p-4 space-y-6">
+
+          <!-- Font Controls -->
+          <div class="space-y-3">
+            <h3 class="font-semibold text-gray-800">📝 Text Size</h3>
+            <input id="fontRange" type="range" min="0.8" max="2" step="0.1" value="1" class="w-full" aria-label="Font size" />
+            <p class="text-xs text-gray-600">Current: <span id="fontValue">100%</span></p>
+          </div>
+
+          <!-- Line Spacing -->
+          <div class="space-y-3">
+            <h3 class="font-semibold text-gray-800">↕️ Line Spacing</h3>
+            <input id="lineSpacing" type="range" min="1" max="2.5" step="0.1" value="1.5" class="w-full" aria-label="Line spacing" />
+            <p class="text-xs text-gray-600">Current: <span id="lineSpacingValue">1.5</span></p>
+          </div>
+
+          <!-- Letter Spacing -->
+          <div class="space-y-3">
+            <h3 class="font-semibold text-gray-800">→ Letter Spacing</h3>
+            <input id="letterSpacing" type="range" min="0" max="1" step="0.1" value="0" class="w-full" aria-label="Letter spacing" />
+            <p class="text-xs text-gray-600">Current: <span id="letterSpacingValue">0</span></p>
+          </div>
+
+          <!-- Font Family -->
+          <div class="space-y-3">
+            <h3 class="font-semibold text-gray-800">🔤 Font Style</h3>
+            <select id="fontFamily" class="w-full border rounded-lg p-3 text-sm bg-white border-gray-300 cursor-pointer" aria-label="Font family">
+              <option value="default">Default (Clear)</option>
+              <option value="dyslexic">OpenDyslexic (Dyslexia-friendly)</option>
+              <option value="hyperlegible">Atkinson Hyperlegible</option>
+            </select>
+          </div>
+
+          <!-- Simplify Content -->
+          <label class="flex items-center gap-3 p-3 bg-blue-50 rounded-lg cursor-pointer hover:bg-blue-100 border border-blue-200">
+            <input id="simplifyToggle" type="checkbox" class="w-5 h-5" aria-label="Simplify content" />
+            <span class="font-semibold text-gray-800">✨ Simplify Content</span>
+          </label>
+
+          <!-- Themes -->
+          <div class="space-y-3">
+            <h3 class="font-semibold text-gray-800">🎨 Theme</h3>
+            <div class="grid grid-cols-2 gap-2">
+              <button class="theme-btn p-3 rounded-lg border-2 border-blue-500 bg-white text-gray-900 font-semibold text-sm" data-theme="light">☀️ Light</button>
+              <button class="theme-btn p-3 rounded-lg border-2 border-gray-300 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 text-gray-900 font-semibold text-sm" data-theme="calm">🌸 Calm</button>
+              <button class="theme-btn p-3 rounded-lg border-2 border-gray-300 bg-gray-900 text-white font-semibold text-sm" data-theme="dark">🌙 Dark</button>
+              <button class="theme-btn p-3 rounded-lg border-2 border-gray-300 bg-black text-white font-semibold text-sm" data-theme="high-contrast">⚫ HC</button>
+            </div>
+          </div>
+
+          <!-- Audio Toggle -->
+          <label class="flex items-center gap-3 p-3 bg-green-50 rounded-lg cursor-pointer hover:bg-green-100 border border-green-200">
+            <input id="audioToggle" type="checkbox" checked class="w-5 h-5" aria-label="Enable audio" />
+            <span class="font-semibold text-gray-800">🔊 Audio Responses</span>
+          </label>
+
+          <!-- Focus Mode -->
+          <label class="flex items-center gap-3 p-3 bg-purple-50 rounded-lg cursor-pointer hover:bg-purple-100 border border-purple-200">
+            <input id="focusModeToggle" type="checkbox" class="w-5 h-5" aria-label="Focus mode" />
+            <span class="font-semibold text-gray-800">🎯 Focus Mode</span>
+          </label>
+
+          <!-- Distraction-Free Mode -->
+          <label class="flex items-center gap-3 p-3 bg-orange-50 rounded-lg cursor-pointer hover:bg-orange-100 border border-orange-200">
+            <input id="distractionFreeToggle" type="checkbox" class="w-5 h-5" aria-label="Distraction-free mode" />
+            <span class="font-semibold text-gray-800">📵 Distraction-Free</span>
+          </label>
+
+        </div>
+      </aside>
+
+      <!-- Main Chat Area -->
+      <main class="flex-1 flex flex-col bg-white overflow-hidden">
+        
+        <!-- Header -->
+        <header class="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-4 shadow-md">
+          <div class="flex items-center justify-between">
+            <div>
+              <h1 class="text-2xl font-bold">💬 Adaptive Chat</h1>
+              <p class="text-sm text-blue-100">ADHD & Dyslexia Friendly</p>
+            </div>
+            <button id="openSidebarBtn" class="md:hidden btn-large bg-white text-blue-600">⚙️</button>
+          </div>
+        </header>
+
+        <!-- Session Focus Timer Bar -->
+        <div id="sessionTimer" class="bg-blue-50 border-b border-blue-200 px-4 py-2 hidden">
+          <div class="text-xs text-blue-700 font-semibold mb-1">Session Focus Time</div>
+          <div class="progress-bar">
+            <div class="progress-bar-fill" style="width: 0%"></div>
+          </div>
+          <div class="text-xs text-blue-600 mt-1">⏱️ <span id="sessionTimeDisplay">00:00</span> / 30 min</div>
+        </div>
+
+        <!-- Chat Messages Area -->
+        <div id="chatMessages" class="flex-1 overflow-y-auto p-4 space-y-4">
+          <!-- Messages will be inserted here -->
+        </div>
+
+        <!-- Pomodoro Timer Panel (Collapsible) -->
+        <div id="timerPanel" class="border-t border-gray-200 bg-gradient-to-r from-red-50 to-orange-50 p-4 max-h-48 overflow-y-auto">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-bold text-gray-800">⏲️ Pomodoro Timer</h3>
+            <button id="toggleTimerBtn" class="text-xs font-semibold bg-gray-300 text-gray-800 px-2 py-1 rounded">Hide</button>
+          </div>
+          <div class="flex items-center gap-4 justify-center">
+            <div class="timer-circle bg-gradient-to-br from-red-400 to-red-600 text-white">
+              <span id="pomodoroTime">25:00</span>
+            </div>
+            <div class="space-y-2">
+              <button id="startPomodoroBtn" class="btn-large bg-red-500 text-white w-32">Start</button>
+              <button id="resetPomodoroBtn" class="btn-large bg-gray-400 text-white w-32">Reset</button>
+              <div class="text-xs text-gray-700 mt-2">
+                <label class="flex items-center gap-2">
+                  <input id="pomodoroSession" type="checkbox" checked />
+                  <span>Work (25m) / Break (5m)</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chat Input Area -->
+        <form id="chatForm" class="border-t border-gray-200 bg-white p-4 shadow-lg">
+          <div class="flex gap-2">
+            <input id="userInput" type="text" class="flex-1 border-2 border-gray-300 rounded-lg px-4 py-3 focus:border-blue-500 focus:outline-none text-base bg-white" placeholder="Ask me anything... (or click 🎤)" aria-label="Chat input" />
+            <button id="micButton" type="button" class="btn-large bg-green-500 hover:bg-green-600 text-white" title="Click to speak">🎤</button>
+            <button type="submit" class="btn-large bg-blue-600 hover:bg-blue-700 text-white font-bold">Send</button>
+          </div>
+        </form>
+
+        <!-- Cognitive Adaptation Panel (Expandable) -->
+        <div id="cognitivePanel" class="hidden fixed bottom-4 right-4 w-80 bg-white rounded-lg shadow-xl border-2 border-blue-500 z-50 max-h-96 overflow-y-auto">
+          <div class="sticky top-0 bg-gradient-to-r from-blue-500 to-purple-500 text-white p-3 flex items-center justify-between">
+            <h3 class="font-bold">🧠 Cognitive Profile</h3>
+            <button id="closeCognitivePanel" class="text-white font-bold cursor-pointer">✕</button>
+          </div>
+          <div class="p-4 space-y-3 text-sm">
+            <!-- Cognitive States -->
+            <div class="space-y-2">
+              <div class="flex justify-between items-center">
+                <span class="font-semibold">ADHD Distracted</span>
+                <span id="adhd-distracted-score" class="bg-gray-200 px-2 py-1 rounded">0%</span>
+              </div>
+              <div class="w-full bg-gray-300 rounded-full h-2">
+                <div id="adhd-distracted-bar" class="bg-red-500 h-2 rounded-full" style="width: 0%"></div>
+              </div>
+            </div>
+            <div class="space-y-2">
+              <div class="flex justify-between items-center">
+                <span class="font-semibold">ADHD Hyperfocus</span>
+                <span id="adhd-hyperfocus-score" class="bg-gray-200 px-2 py-1 rounded">0%</span>
+              </div>
+              <div class="w-full bg-gray-300 rounded-full h-2">
+                <div id="adhd-hyperfocus-bar" class="bg-green-500 h-2 rounded-full" style="width: 0%"></div>
+              </div>
+            </div>
+            <div class="space-y-2">
+              <div class="flex justify-between items-center">
+                <span class="font-semibold">Dyslexia Risk</span>
+                <span id="dyslexia-score" class="bg-gray-200 px-2 py-1 rounded">0%</span>
+              </div>
+              <div class="w-full bg-gray-300 rounded-full h-2">
+                <div id="dyslexia-bar" class="bg-orange-500 h-2 rounded-full" style="width: 0%"></div>
+              </div>
+            </div>
+            <div class="space-y-2">
+              <div class="flex justify-between items-center">
+                <span class="font-semibold">Cognitive Overload</span>
+                <span id="overload-score" class="bg-gray-200 px-2 py-1 rounded">0%</span>
+              </div>
+              <div class="w-full bg-gray-300 rounded-full h-2">
+                <div id="overload-bar" class="bg-yellow-500 h-2 rounded-full" style="width: 0%"></div>
+              </div>
+            </div>
+            
+            <!-- Behavior Metrics -->
+            <div class="border-t pt-3 mt-3">
+              <h4 class="font-bold mb-2">📊 Behavior Metrics</h4>
+              <div class="space-y-1 text-xs">
+                <p>⌨️ Avg Typing Speed: <span id="typing-speed">0</span> chars/sec</p>
+                <p>⏱️ Avg Response Time: <span id="response-time">0</span>s</p>
+                <p>👁️ Avg Reading Time: <span id="reading-time">0</span>s/msg</p>
+                <p>📝 Messages Sent: <span id="message-count">0</span></p>
+                <p>🔄 Corrections: <span id="correction-count">0</span></p>
+              </div>
+            </div>
+
+            <!-- Adaptation Log -->
+            <div class="border-t pt-3 mt-3">
+              <h4 class="font-bold mb-2">💡 AI Decisions</h4>
+              <div id="adaptation-log" class="text-xs space-y-1 bg-gray-100 p-2 rounded max-h-32 overflow-y-auto">
+                <p class="text-gray-600">Monitoring behavior...</p>
+              </div>
+            </div>
+
+            <!-- Manual Override -->
+            <button id="resetAdaptationBtn" class="w-full mt-3 bg-gray-300 hover:bg-gray-400 text-gray-900 font-bold py-2 px-3 rounded text-xs">
+              Reset Adaptation
+            </button>
+          </div>
+        </div>
+
+        <!-- Cognitive Panel Toggle Button (Fixed) -->
+        <button id="openCognitivePanel" class="fixed bottom-4 right-4 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-full w-14 h-14 flex items-center justify-center font-bold text-xl shadow-lg hover:shadow-xl z-40">
+          🧠
+        </button>
+
+      </main>
+
+    </div>
+
+    <script>
+    // ============ ADAPTIVE CHAT WITH ADHD & DYSLEXIA FEATURES ============
+    (function(){
+      // DOM Elements
+      const chatMessagesEl = document.getElementById('chatMessages');
+      const chatForm = document.getElementById('chatForm');
+      const userInput = document.getElementById('userInput');
+      const fontRange = document.getElementById('fontRange');
+      const lineSpacing = document.getElementById('lineSpacing');
+      const letterSpacing = document.getElementById('letterSpacing');
+      const fontFamily = document.getElementById('fontFamily');
+      const simplifyToggle = document.getElementById('simplifyToggle');
+      const audioToggle = document.getElementById('audioToggle');
+      const focusModeToggle = document.getElementById('focusModeToggle');
+      const distractionFreeToggle = document.getElementById('distractionFreeToggle');
+      const themeButtons = document.querySelectorAll('.theme-btn');
+      const openSidebarBtn = document.getElementById('openSidebarBtn');
+      const closeSidebarBtn = document.getElementById('closeSidebarBtn');
+      const settingsPanel = document.getElementById('settingsPanel');
+      const micButton = document.getElementById('micButton');
+      const timerPanel = document.getElementById('timerPanel');
+      const toggleTimerBtn = document.getElementById('toggleTimerBtn');
+      const sessionTimer = document.getElementById('sessionTimer');
+
+      // Pomodoro Timer Elements
+      const pomodoroTime = document.getElementById('pomodoroTime');
+      const startPomodoroBtn = document.getElementById('startPomodoroBtn');
+      const resetPomodoroBtn = document.getElementById('resetPomodoroBtn');
+      const pomodoroSession = document.getElementById('pomodoroSession');
+
+      // Audio & Speech
+      const synth = window.speechSynthesis;
+      let isListening = false;
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      let recognition = null;
+      if (SpeechRecognition) {
+        recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = true;
+        recognition.language = 'en-US';
+        recognition.onstart = () => { isListening = true; micButton.style.background = '#ef4444'; micButton.textContent = '🔴'; };
+        recognition.onresult = (event) => {
+          let transcript = '';
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            transcript += event.results[i][0].transcript;
+          }
+          if (transcript.trim()) userInput.value = transcript.trim();
+        };
+        recognition.onend = () => { isListening = false; micButton.style.background = '#22c55e'; micButton.textContent = '🎤'; };
+        recognition.onerror = (event) => { console.error('Speech error:', event.error); };
+      }
+
+      // Pomodoro Timer State
+      let pomodoroActive = false;
+      let pomodoroTimeLeft = 25 * 60;
+      let pomodoroInterval = null;
+      let isWorkSession = true;
+
+      // Session Focus Timer State
+      let sessionActive = false;
+      let sessionTimeLeft = 0;
+      let sessionInterval = null;
+
+      // Settings Object
+      const settings = {
+        scale: parseFloat(localStorage.getItem('chat-scale') || '1'),
+        lineSpacing: parseFloat(localStorage.getItem('chat-lineSpacing') || '1.5'),
+        letterSpacing: parseFloat(localStorage.getItem('chat-letterSpacing') || '0'),
+        fontFamily: localStorage.getItem('chat-fontFamily') || 'default',
+        simplify: localStorage.getItem('chat-simplify') === 'true',
+        audio: localStorage.getItem('chat-audio') !== 'false',
+        focusMode: localStorage.getItem('chat-focusMode') === 'true',
+        distractionFree: localStorage.getItem('chat-distractionFree') === 'true',
+        theme: localStorage.getItem('chat-theme') || 'light',
+      };
+
+      // ============ SETTINGS & UI FUNCTIONS ============
+      
+      function applySettings() {
+        document.documentElement.style.setProperty('--chat-scale', settings.scale);
+        document.documentElement.style.setProperty('--line-spacing', settings.lineSpacing);
+        document.documentElement.style.setProperty('--letter-spacing', settings.letterSpacing);
+        
+        fontRange.value = settings.scale;
+        document.getElementById('fontValue').textContent = Math.round(settings.scale * 100) + '%';
+        
+        lineSpacing.value = settings.lineSpacing;
+        document.getElementById('lineSpacingValue').textContent = settings.lineSpacing;
+        
+        letterSpacing.value = settings.letterSpacing;
+        document.getElementById('letterSpacingValue').textContent = settings.letterSpacing;
+        
+        fontFamily.value = settings.fontFamily;
+        applyFontFamily();
+        
+        simplifyToggle.checked = settings.simplify;
+        audioToggle.checked = settings.audio;
+        focusModeToggle.checked = settings.focusMode;
+        distractionFreeToggle.checked = settings.distractionFree;
+        
+        applyTheme(settings.theme);
+      }
+
+      function saveSettings() {
+        localStorage.setItem('chat-scale', String(settings.scale));
+        localStorage.setItem('chat-lineSpacing', String(settings.lineSpacing));
+        localStorage.setItem('chat-letterSpacing', String(settings.letterSpacing));
+        localStorage.setItem('chat-fontFamily', settings.fontFamily);
+        localStorage.setItem('chat-simplify', String(settings.simplify));
+        localStorage.setItem('chat-audio', String(settings.audio));
+        localStorage.setItem('chat-focusMode', String(settings.focusMode));
+        localStorage.setItem('chat-distractionFree', String(settings.distractionFree));
+        localStorage.setItem('chat-theme', settings.theme);
+      }
+
+      function applyFontFamily() {
+        const body = document.body;
+        body.classList.remove('font-dyslexic', 'font-hyperlegible');
+        if (settings.fontFamily === 'dyslexic') body.classList.add('font-dyslexic');
+        else if (settings.fontFamily === 'hyperlegible') body.classList.add('font-hyperlegible');
+      }
+
+      function applyTheme(theme) {
+        document.body.classList.remove('theme-light', 'theme-calm', 'theme-dark', 'theme-high-contrast');
+        document.body.classList.add('theme-' + theme);
+        
+        // Update all theme-related elements
+        const main = document.querySelector('main');
+        const header = document.querySelector('header');
+        const sidebar = document.getElementById('settingsPanel');
+        const chatForm = document.getElementById('chatForm');
+        const input = document.getElementById('userInput');
+        
+        main.classList.remove('theme-light', 'theme-calm', 'theme-dark', 'theme-high-contrast');
+        main.classList.add('theme-' + theme);
+        
+        // Update theme buttons highlighting
+        themeButtons.forEach(btn => {
+          btn.classList.remove('border-blue-500', 'ring-2', 'ring-blue-400');
+          if (btn.dataset.theme === theme) {
+            btn.classList.add('border-blue-500', 'ring-2', 'ring-blue-400');
+          }
+        });
+      }
+
+      // ============ EVENT LISTENERS ============
+
+      fontRange.addEventListener('input', (e) => {
+        settings.scale = Number(e.target.value);
+        applySettings();
+        saveSettings();
+      });
+
+      lineSpacing.addEventListener('input', (e) => {
+        settings.lineSpacing = Number(e.target.value);
+        document.documentElement.style.setProperty('--line-spacing', settings.lineSpacing);
+        saveSettings();
+      });
+
+      letterSpacing.addEventListener('input', (e) => {
+        settings.letterSpacing = Number(e.target.value);
+        document.documentElement.style.setProperty('--letter-spacing', settings.letterSpacing);
+        saveSettings();
+      });
+
+      fontFamily.addEventListener('change', (e) => {
+        settings.fontFamily = e.target.value;
+        applyFontFamily();
+        saveSettings();
+      });
+
+      simplifyToggle.addEventListener('change', (e) => {
+        settings.simplify = e.target.checked;
+        saveSettings();
+      });
+
+      audioToggle.addEventListener('change', (e) => {
+        settings.audio = e.target.checked;
+        saveSettings();
+      });
+
+      focusModeToggle.addEventListener('change', (e) => {
+        settings.focusMode = e.target.checked;
+        document.body.classList.toggle('focus-mode', settings.focusMode);
+        if (settings.focusMode) {
+          sessionActive = true;
+          sessionTimeLeft = 30 * 60;
+          sessionTimer.classList.remove('hidden');
+          updateSessionTimer();
+          if (!sessionInterval) {
+            sessionInterval = setInterval(updateSessionTimer, 1000);
+          }
+        } else {
+          sessionActive = false;
+          sessionTimer.classList.add('hidden');
+          clearInterval(sessionInterval);
+        }
+        saveSettings();
+      });
+
+      distractionFreeToggle.addEventListener('change', (e) => {
+        settings.distractionFree = e.target.checked;
+        document.body.classList.toggle('distraction-free', settings.distractionFree);
+        saveSettings();
+      });
+
+      themeButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          settings.theme = e.target.dataset.theme;
+          applyTheme(settings.theme);
+          saveSettings();
+        });
+      });
+
+      openSidebarBtn.addEventListener('click', () => {
+        settingsPanel.classList.remove('hidden');
+        settingsPanel.classList.add('fixed', 'inset-0', 'z-50', 'md:relative', 'md:flex');
+      });
+
+      closeSidebarBtn.addEventListener('click', () => {
+        settingsPanel.classList.add('hidden');
+        settingsPanel.classList.remove('fixed', 'inset-0', 'z-50');
+      });
+
+      micButton.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (!recognition) { alert('Speech Recognition not supported'); return; }
+        if (isListening) { recognition.stop(); } else { userInput.value = ''; recognition.start(); }
+      });
+
+      // ============ POMODORO TIMER ============
+
+      function updatePomodoroDisplay() {
+        const mins = Math.floor(pomodoroTimeLeft / 60);
+        const secs = pomodoroTimeLeft % 60;
+        pomodoroTime.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+      }
+
+      function startPomodoro() {
+        if (pomodoroActive) return;
+        pomodoroActive = true;
+        startPomodoroBtn.textContent = 'Stop';
+        startPomodoroBtn.classList.remove('bg-red-500');
+        startPomodoroBtn.classList.add('bg-red-700');
+
+        pomodoroInterval = setInterval(() => {
+          pomodoroTimeLeft--;
+          updatePomodoroDisplay();
+
+          if (pomodoroTimeLeft === 0) {
+            isWorkSession = !isWorkSession;
+            pomodoroTimeLeft = isWorkSession ? 25 * 60 : 5 * 60;
+            const msg = isWorkSession ? '🔥 Back to work!' : '☕ Take a break!';
+            addSystemMessage(msg);
+            speakText(msg);
+          }
+        }, 1000);
+      }
+
+      function stopPomodoro() {
+        pomodoroActive = false;
+        clearInterval(pomodoroInterval);
+        startPomodoroBtn.textContent = 'Start';
+        startPomodoroBtn.classList.add('bg-red-500');
+        startPomodoroBtn.classList.remove('bg-red-700');
+      }
+
+      startPomodoroBtn.addEventListener('click', () => {
+        if (pomodoroActive) stopPomodoro();
+        else startPomodoro();
+      });
+
+      resetPomodoroBtn.addEventListener('click', () => {
+        stopPomodoro();
+        isWorkSession = true;
+        pomodoroTimeLeft = 25 * 60;
+        updatePomodoroDisplay();
+      });
+
+      toggleTimerBtn.addEventListener('click', () => {
+        timerPanel.classList.toggle('max-h-0');
+        timerPanel.classList.toggle('max-h-48');
+        toggleTimerBtn.textContent = timerPanel.classList.contains('max-h-0') ? 'Show' : 'Hide';
+      });
+
+      // ============ SESSION FOCUS TIMER ============
+
+      function updateSessionTimer() {
+        if (!sessionActive) return;
+        sessionTimeLeft--;
+        const mins = Math.floor(sessionTimeLeft / 60);
+        const secs = sessionTimeLeft % 60;
+        document.getElementById('sessionTimeDisplay').textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        
+        const progress = (1 - (sessionTimeLeft / (30 * 60))) * 100;
+        document.querySelector('.progress-bar-fill').style.width = progress + '%';
+
+        if (sessionTimeLeft === 0) {
+          sessionActive = false;
+          addSystemMessage('✅ Great job! 30 min focus session completed!');
+          speakText('Great job! Your focus session is complete.');
+        }
+      }
+
+      // ============ CHAT FUNCTIONS ============
+
+      function addSystemMessage(text) {
+        const el = document.createElement('div');
+        el.className = 'text-center text-sm text-gray-600 py-2 px-4 rounded-lg bg-gray-100 italic';
+        el.textContent = text;
+        chatMessagesEl.appendChild(el);
+        chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+      }
+
+      function addMessage(text, who = 'bot') {
+        const el = document.createElement('div');
+        el.className = `flex gap-3 message-new ${who === 'user' ? 'justify-end' : 'justify-start'}`;
+        
+        const avatar = document.createElement('div');
+        avatar.className = `avatar ${who === 'bot' ? 'avatar-bot' : 'avatar-user'} flex-shrink-0`;
+        avatar.textContent = who === 'bot' ? '🤖' : '👤';
+
+        const bubble = document.createElement('div');
+        const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        // Apply theme-based colors to message bubble
+        let bubbleClass = `message rounded-2xl max-w-xs md:max-w-md lg:max-w-lg p-4 shadow-sm message-${who}`;
+        
+        bubble.className = bubbleClass;
+        bubble.innerHTML = `<div>${text}</div><div class="text-xs mt-1 opacity-60">${now}</div>`;
+
+        if (who === 'bot') {
+          el.appendChild(avatar);
+          el.appendChild(bubble);
+        } else {
+          el.appendChild(bubble);
+          el.appendChild(avatar);
+        }
+
+        chatMessagesEl.appendChild(el);
+        chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+
+        if (who === 'bot') speakText(text);
+      }
+
+      function speakText(text) {
+        if (!settings.audio || !synth) return;
+        synth.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 0.95;
+        utterance.pitch = 1;
+        synth.speak(utterance);
+      }
+
+      function simplifyText(text) {
+        const map = {
+          attention: 'focus', concentration: 'focus', strategy: 'plan', strategies: 'plans',
+          'time management': 'time tips', 'work environment': 'place to work'
+        };
+        let t = text.replace(/\b(\w+)\b/g, (m) => (map[m.toLowerCase()] ? map[m.toLowerCase()] : m));
+        const sentences = t.split(/[\.\!\?]+/).map(s => s.trim()).filter(Boolean);
+        const short = sentences.map(s => {
+          const words = s.split(/\s+/);
+          if (words.length > 14) return words.slice(0, 12).join(' ') + '...';
+          return s;
+        });
+        return short.join('. ');
+      }
+
+      function botReply(userText) {
+        const ut = userText.toLowerCase();
+        let reply = "I'm here to help! Could you tell me more?";
+
+        if (ut.includes('focus') || ut.includes('concentrat') || ut.includes('attention')) {
+          reply = 'Try short bursts of work (e.g., 20 minutes), remove distractions, and take movement breaks. Use the Pomodoro timer!';
+        } else if (ut.includes('dyslex') || ut.includes('reading')) {
+          reply = 'Use larger fonts, high contrast, and read aloud. Break text into short lines. Try the dyslexia-friendly font!';
+        } else if (ut.includes('help') || ut.includes('features')) {
+          reply = 'I can give simple tips, make text shorter, change visuals, and read aloud. What would you like?';
+        } else if (ut.includes('timer') || ut.includes('pomodoro')) {
+          reply = 'Use the Pomodoro timer on the right! 25 min work, 5 min break. Or enable Focus Mode for a 30-min session.';
+        } else if (ut.includes('suggest') || ut.includes('tips')) {
+          reply = 'Keep a simple checklist, use timers, set one goal per session, and take breaks!';
+        } else if (ut.length < 50) {
+          reply = `You asked: "${userText}" — maybe try: break tasks into tiny steps and use a timer!`;
+        }
+
+        if (settings.simplify) reply = simplifyText(reply);
+        return reply;
+      }
+
+      // ============ CHAT FORM SUBMISSION ============
+
+      chatForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const text = userInput.value.trim();
+        if (!text) return;
+
+        addMessage(text, 'user');
+        userInput.value = '';
+
+        // Show typing indicator
+        const typingEl = document.createElement('div');
+        typingEl.className = 'flex gap-3 message-new';
+        const avatar = document.createElement('div');
+        avatar.className = 'avatar avatar-bot flex-shrink-0';
+        avatar.textContent = '🤖';
+        const bubble = document.createElement('div');
+        bubble.className = 'bg-gray-100 rounded-2xl rounded-bl-none p-3';
+        bubble.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
+        typingEl.appendChild(avatar);
+        typingEl.appendChild(bubble);
+        chatMessagesEl.appendChild(typingEl);
+        chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+
+        setTimeout(() => {
+          typingEl.remove();
+          const reply = botReply(text);
+          addMessage(reply, 'bot');
+        }, 400 + Math.random() * 600);
+      });
+
+      // ============ INITIALIZATION ============
+
+      applySettings();
+      
+      // Welcome message
+      const welcomeMsg = settings.simplify 
+        ? simplifyText('Hello! I can help with focus tips, dyslexia support, and more. Try asking for help!')
+        : 'Hello! 👋 I can help with focus tips, dyslexia support, and more. Try asking: "How can I focus better?"';
+      addMessage(welcomeMsg, 'bot');
+
+      updatePomodoroDisplay();
+
+      // ============ COGNITIVE ADAPTATION ENGINE ============
+      
+      // Behavior tracking object
+      const behaviorTracker = {
+        typingSessions: [], // {startTime, endTime, length, corrections}
+        messages: [], // {text, timestamp, length, errors}
+        readingTimes: [], // time spent reading each message
+        scrollEvents: [],
+        idleTime: 0,
+        focusInterruptions: 0,
+        lastActivityTime: Date.now(),
+      };
+
+      // Cognitive state scores
+      const cognitiveStates = {
+        'adhd-distracted': 0,
+        'adhd-hyperfocus': 0,
+        'dyslexia': 0,
+        'cognitive-overload': 0,
+        'normal': 100,
+      };
+
+      // Adaptation history
+      const adaptationLog = [];
+
+      // Track typing behavior
+      let typingStartTime = null;
+      let lastInputLength = 0;
+
+      userInput.addEventListener('focus', () => {
+        typingStartTime = Date.now();
+      });
+
+      userInput.addEventListener('input', (e) => {
+        const currentLength = e.target.value.length;
+        const deletions = lastInputLength > currentLength;
+        if (deletions) {
+          behaviorTracker.messages[behaviorTracker.messages.length - 1] = 
+            { ...behaviorTracker.messages[behaviorTracker.messages.length - 1], corrections: (behaviorTracker.messages[behaviorTracker.messages.length - 1].corrections || 0) + 1 };
+        }
+        lastInputLength = currentLength;
+        behaviorTracker.lastActivityTime = Date.now();
+      });
+
+      // Track message submission
+      const originalAddMessage = addMessage;
+      addMessage = function(text, who = 'bot') {
+        originalAddMessage.call(this, text, who);
+        
+        if (who === 'user') {
+          const typingDuration = typingStartTime ? (Date.now() - typingStartTime) / 1000 : 0;
+          behaviorTracker.messages.push({
+            text,
+            timestamp: Date.now(),
+            length: text.length,
+            typingDuration,
+            errors: (text.match(/\s{2,}/g) || []).length, // Multiple spaces = potential errors
+            corrections: 0,
+          });
+          typingStartTime = null;
+        }
+
+        updateCognitiveState();
+      };
+
+      // ============ COGNITIVE STATE DETECTION ============
+
+      function updateCognitiveState() {
+        if (behaviorTracker.messages.length === 0) return;
+
+        // Calculate metrics
+        const recentMessages = behaviorTracker.messages.slice(-5);
+        const avgTypingSpeed = recentMessages.reduce((sum, m) => sum + (m.length / (m.typingDuration || 1)), 0) / recentMessages.length;
+        const avgMessageLength = recentMessages.reduce((sum, m) => sum + m.length, 0) / recentMessages.length;
+        const errorRate = recentMessages.reduce((sum, m) => sum + m.errors, 0) / recentMessages.length;
+        const correctionRate = recentMessages.reduce((sum, m) => sum + (m.corrections || 0), 0) / recentMessages.length;
+        const idleTimeSecs = (Date.now() - behaviorTracker.lastActivityTime) / 1000;
+
+        // Update metrics display
+        document.getElementById('typing-speed').textContent = (avgTypingSpeed / 10).toFixed(1);
+        document.getElementById('response-time').textContent = recentMessages[recentMessages.length - 1]?.typingDuration?.toFixed(1) || '0';
+        document.getElementById('message-count').textContent = behaviorTracker.messages.length;
+        document.getElementById('correction-count').textContent = Math.round(correctionRate);
+
+        // ========== ADHD DISTRACTED Detection ==========
+        // High corrections, low typing speed, short messages, frequent pauses
+        if (errorRate > 0.5 || avgTypingSpeed < 5 || (avgMessageLength < 10 && recentMessages.length > 3)) {
+          cognitiveStates['adhd-distracted'] = Math.min(100, 30 + (errorRate * 20) + (correctionRate * 10));
+        } else {
+          cognitiveStates['adhd-distracted'] *= 0.9; // Decay
+        }
+
+        // ========== ADHD HYPERFOCUS Detection ==========
+        // Long messages, consistent typing, low corrections, sustained activity
+        if (avgMessageLength > 50 && correctionRate < 1 && recentMessages.length > 2 && idleTimeSecs < 30) {
+          cognitiveStates['adhd-hyperfocus'] = Math.min(100, 40 + (avgMessageLength / 10));
+        } else {
+          cognitiveStates['adhd-hyperfocus'] *= 0.9;
+        }
+
+        // ========== DYSLEXIA Detection ==========
+        // Look for spelling errors, grammar issues, repeated word patterns
+        const textContent = recentMessages.map(m => m.text).join(' ').toLowerCase();
+        const spellingErrors = (textContent.match(/\b[a-z]{1,2}\b/g) || []).length; // Short words = potential spelling issues
+        const wordRepetition = (textContent.split(' ').length - new Set(textContent.split(' ')).size) / textContent.split(' ').length;
+        
+        if (spellingErrors > 3 || wordRepetition > 0.3 || errorRate > 1) {
+          cognitiveStates['dyslexia'] = Math.min(100, 25 + (spellingErrors * 5) + (wordRepetition * 20));
+        } else {
+          cognitiveStates['dyslexia'] *= 0.9;
+        }
+
+        // ========== COGNITIVE OVERLOAD Detection ==========
+        // Many short, fragmented messages; high correction rate; long idle times
+        const fragmentedMessages = recentMessages.filter(m => m.length < 15).length;
+        if (fragmentedMessages > 3 || correctionRate > 2 || idleTimeSecs > 60) {
+          cognitiveStates['cognitive-overload'] = Math.min(100, 30 + (fragmentedMessages * 10) + (correctionRate * 5));
+        } else {
+          cognitiveStates['cognitive-overload'] *= 0.9;
+        }
+
+        // Normalize scores
+        const total = Object.values(cognitiveStates).reduce((a, b) => a + b, 0);
+        for (let state in cognitiveStates) {
+          cognitiveStates[state] = Math.max(0, Math.min(100, (cognitiveStates[state] / total) * 100));
+        }
+
+        // Update UI
+        updateCognitiveUI();
+        triggerAdaptations();
+      }
+
+      function updateCognitiveUI() {
+        document.getElementById('adhd-distracted-score').textContent = Math.round(cognitiveStates['adhd-distracted']) + '%';
+        document.getElementById('adhd-distracted-bar').style.width = cognitiveStates['adhd-distracted'] + '%';
+
+        document.getElementById('adhd-hyperfocus-score').textContent = Math.round(cognitiveStates['adhd-hyperfocus']) + '%';
+        document.getElementById('adhd-hyperfocus-bar').style.width = cognitiveStates['adhd-hyperfocus'] + '%';
+
+        document.getElementById('dyslexia-score').textContent = Math.round(cognitiveStates['dyslexia']) + '%';
+        document.getElementById('dyslexia-bar').style.width = cognitiveStates['dyslexia'] + '%';
+
+        document.getElementById('overload-score').textContent = Math.round(cognitiveStates['cognitive-overload']) + '%';
+        document.getElementById('overload-bar').style.width = cognitiveStates['cognitive-overload'] + '%';
+      }
+
+      // ============ AUTO-ADAPTATION ENGINE ============
+
+      function triggerAdaptations() {
+        const distracted = cognitiveStates['adhd-distracted'];
+        const hyperfocus = cognitiveStates['adhd-hyperfocus'];
+        const dyslexia = cognitiveStates['dyslexia'];
+        const overload = cognitiveStates['cognitive-overload'];
+
+        // ========== ADHD DISTRACTED Adaptations ==========
+        if (distracted > 50) {
+          logAdaptation('🔴 ADHD Distracted detected - Enabling Focus Mode');
+          focusModeToggle.checked = true;
+          focusModeToggle.dispatchEvent(new Event('change'));
+          settings.focusMode = true;
+
+          logAdaptation('⏱️ Auto-starting Pomodoro Timer');
+          if (!pomodoroActive) startPomodoro();
+
+          // Increase font size
+          settings.scale = 1.2;
+          document.documentElement.style.setProperty('--chat-scale', settings.scale);
+          fontRange.value = settings.scale;
+        }
+
+        // ========== DYSLEXIA Adaptations ==========
+        if (dyslexia > 50) {
+          logAdaptation('🟠 Dyslexia signals detected - Activating supports');
+          fontFamily.value = 'dyslexic';
+          settings.fontFamily = 'dyslexic';
+          applyFontFamily();
+
+          logAdaptation('📏 Increasing line spacing');
+          settings.lineSpacing = 2;
+          document.documentElement.style.setProperty('--line-spacing', settings.lineSpacing);
+          lineSpacing.value = settings.lineSpacing;
+
+          logAdaptation('🔊 Enabling Text-to-Speech');
+          audioToggle.checked = true;
+          settings.audio = true;
+
+          logAdaptation('⚫ Switching to High Contrast theme');
+          settings.theme = 'high-contrast';
+          applyTheme('high-contrast');
+        }
+
+        // ========== COGNITIVE OVERLOAD Adaptations ==========
+        if (overload > 50) {
+          logAdaptation('🟡 Cognitive overload detected - Simplifying responses');
+          simplifyToggle.checked = true;
+          settings.simplify = true;
+
+          logAdaptation('🌸 Switching to Calm theme');
+          settings.theme = 'calm';
+          applyTheme('calm');
+
+          // Increase spacing
+          settings.lineSpacing = Math.min(2.2, settings.lineSpacing + 0.2);
+          document.documentElement.style.setProperty('--line-spacing', settings.lineSpacing);
+        }
+
+        // ========== ADHD HYPERFOCUS Adaptations ==========
+        if (hyperfocus > 60) {
+          logAdaptation('🟢 Hyperfocus mode detected - Minimizing distractions');
+          distractionFreeToggle.checked = true;
+          document.body.classList.add('distraction-free');
+          settings.distractionFree = true;
+
+          logAdaptation('🎯 Extending session timer');
+          if (!sessionActive && focusModeToggle.checked) {
+            sessionTimeLeft = 60 * 60; // 1 hour
+          }
+        }
+
+        saveSettings();
+      }
+
+      function logAdaptation(message) {
+        adaptationLog.push({
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          message,
+        });
+
+        // Keep only last 5 logs
+        if (adaptationLog.length > 5) adaptationLog.shift();
+
+        // Update log display
+        const logEl = document.getElementById('adaptation-log');
+        logEl.innerHTML = adaptationLog
+          .map(log => `<p><span class="text-gray-500">${log.time}</span> ${log.message}</p>`)
+          .join('');
+      }
+
+      // ============ COGNITIVE PANEL CONTROLS ============
+
+      document.getElementById('openCognitivePanel').addEventListener('click', () => {
+        document.getElementById('cognitivePanel').classList.remove('hidden');
+        document.getElementById('openCognitivePanel').style.display = 'none';
+      });
+
+      document.getElementById('closeCognitivePanel').addEventListener('click', () => {
+        document.getElementById('cognitivePanel').classList.add('hidden');
+        document.getElementById('openCognitivePanel').style.display = 'flex';
+      });
+
+      document.getElementById('resetAdaptationBtn').addEventListener('click', () => {
+        // Reset all cognitive scores
+        for (let state in cognitiveStates) {
+          cognitiveStates[state] = 0;
+        }
+        cognitiveStates['normal'] = 100;
+
+        // Reset behavior tracker
+        behaviorTracker.messages = [];
+        behaviorTracker.typingSessions = [];
+
+        // Reset UI to defaults
+        focusModeToggle.checked = false;
+        distractionFreeToggle.checked = false;
+        simplifyToggle.checked = false;
+        fontFamily.value = 'default';
+        settings.theme = 'light';
+
+        applySettings();
+        applyTheme('light');
+        updateCognitiveUI();
+
+        logAdaptation('🔄 All adaptations reset by user');
+      });
+
+      // Run adaptation check every 5 seconds
+      setInterval(() => {
+        updateCognitiveState();
+      }, 5000);
+
+      logAdaptation('✅ Cognitive Adaptation Engine activated');
+    })();
+    </script>
+  </body>
+</html>
